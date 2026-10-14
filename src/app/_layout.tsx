@@ -1,11 +1,30 @@
+import { DhikrProvider } from "@/context/DhikrContext";
 import { Stack } from "expo-router";
 
-// Root layout. Every screen file inside src/app/ is a route.
-// Week 3 replaces this with Stack + Tabs layouts.
 export default function RootLayout() {
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ title: "DEV 272 · Mobile Application Development" }} />
-    </Stack>
+    <DhikrProvider>
+      <Stack>
+        <Stack.Screen
+          name="(drawer)"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="dhikr/[id]"
+          options={{
+            headerShown: true,
+            headerBackTitle: "Back",
+            headerBackButtonDisplayMode: "minimal",
+          }}
+        />
+        <Stack.Screen
+          name="search"
+          options={{
+            title: "Search",
+            headerBackButtonDisplayMode: "minimal",
+          }}
+        />
+      </Stack>
+    </DhikrProvider>
   );
 }

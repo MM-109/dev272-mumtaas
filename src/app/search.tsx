@@ -1,23 +1,45 @@
-
+import { useDhikr } from "@/context/DhikrContext";
 import { dhikr, type Dhikr } from "@/data/dhikr";
+import { router } from "expo-router";
 import { useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+    FlatList,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from "react-native";
 
-export default function Index() {
+export default function SearchScreen() {
   const [query, setQuery] = useState("");
+  const { selectDhikr } = useDhikr();
 
   const filteredDhikr = dhikr.filter((item) =>
     item.name.toLowerCase().includes(query.toLowerCase())
   );
 
+  function handleSelectDhikr(id: string) {
+    selectDhikr(id);
+    router.replace("/");
+  }
+
   return (
     <FlatList<Dhikr>
       data={filteredDhikr}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <DhikrRow dhikr={item} />}
-      ListHeaderComponent={<Header query={query} setQuery={setQuery} />}
+      renderItem={({ item }) => (
+        <DhikrRow
+          dhikr={item}
+          onSelect={handleSelectDhikr}
+        />
+      )}
+      ListHeaderComponent={
+        <Header query={query} setQuery={setQuery} />
+      }
       contentContainerStyle={styles.container}
       style={styles.screen}
+      keyboardShouldPersistTaps="handled"
     />
   );
 }
@@ -44,7 +66,11 @@ function Header({
           autoCapitalize="none"
           returnKeyType="search"
         />
-        <Pressable style={styles.button} onPress={() => setQuery("")}>
+
+        <Pressable
+          style={styles.button}
+          onPress={() => setQuery("")}
+        >
           <Text style={styles.buttonText}>Clear</Text>
         </Pressable>
       </View>
@@ -52,17 +78,27 @@ function Header({
   );
 }
 
-function DhikrRow({ dhikr }: { dhikr: Dhikr }) {
+function DhikrRow({
+  dhikr,
+  onSelect,
+}: {
+  dhikr: Dhikr;
+  onSelect: (id: string) => void;
+}) {
   return (
-    <View style={styles.row}>
+    <Pressable
+      style={styles.row}
+      onPress={() => onSelect(dhikr.id)}
+    >
       <Text style={styles.rowTitle}>{dhikr.name}</Text>
       <Text style={styles.count}>{dhikr.count}</Text>
-    </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
+    flex: 1,
     backgroundColor: "#F8F5EC",
   },
   container: {
