@@ -1,21 +1,14 @@
 import { useDhikr } from "@/context/DhikrContext";
-import { dhikr, type Dhikr } from "@/data/dhikr";
+import type { Dhikr } from "@/data/dhikr";
 import { router } from "expo-router";
 import { useState } from "react";
-import {
-    FlatList,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
-} from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 export default function SearchScreen() {
   const [query, setQuery] = useState("");
-  const { selectDhikr } = useDhikr();
+  const { dhikrList, selectDhikr } = useDhikr();
 
-  const filteredDhikr = dhikr.filter((item) =>
+  const filteredDhikr = dhikrList.filter((item) =>
     item.name.toLowerCase().includes(query.toLowerCase())
   );
 
@@ -53,7 +46,7 @@ function Header({
 }) {
   return (
     <View style={styles.header}>
-      <Text style={styles.title}>Dhikr Counter</Text>
+      <Text style={styles.title}>Adhkar</Text>
       <Text style={styles.subtitle}>Remembrance of Allah</Text>
 
       <View style={styles.searchRow}>
@@ -91,7 +84,7 @@ function DhikrRow({
       onPress={() => onSelect(dhikr.id)}
     >
       <Text style={styles.rowTitle}>{dhikr.name}</Text>
-      <Text style={styles.count}>{dhikr.count}</Text>
+      <Text style={styles.count}>{dhikr.target} times</Text>
     </Pressable>
   );
 }

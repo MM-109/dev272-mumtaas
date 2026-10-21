@@ -1,21 +1,56 @@
 import { useDhikr } from "@/context/DhikrContext";
-import { dhikr } from "@/data/dhikr";
 import { router, useNavigation } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
   const navigation = useNavigation();
+  const [showCompletion, setShowCompletion] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
+    dhikrList,
     count,
     selectedDhikrId,
     incrementCount,
   } = useDhikr();
 
-  const selectedDhikr = dhikr.find(
+  const selectedDhikr = dhikrList.find(
     (item) => item.id === selectedDhikrId
   );
+
+  useEffect(() => {
+    setShowCompletion(false);
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [selectedDhikrId]);
+
+  function handleCount() {
+    incrementCount();
+
+    if (selectedDhikr && count + 1 === selectedDhikr.target) {
+      setShowCompletion(true);
+
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+
+      timerRef.current = setTimeout(() => {
+        setShowCompletion(false);
+        timerRef.current = null;
+      }, 10000);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
@@ -47,11 +82,25 @@ export default function Index() {
 
         <Pressable
           style={styles.counter}
-          onPress={incrementCount}
+          onPress={handleCount}
         >
           <Text style={styles.count}>{count}</Text>
           <Text style={styles.tapText}>TAP TO COUNT</Text>
         </Pressable>
+
+        {showCompletion && selectedDhikr ? (
+          <View style={styles.completionMessage}>
+            <Text style={styles.completionTitle}>
+              Goal Completed!
+            </Text>
+            <Text style={styles.completionText}>
+              You've completed your goal of {selectedDhikr.target} repetitions.
+            </Text>
+            <Text style={styles.completionText}>
+              May Allah accept your dhikr.
+            </Text>
+          </View>
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -123,5 +172,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: "#FFFFFF",
+  },
+  completionMessage: {
+    position: "absolute",
+    bottom: 20,
+    alignSelf: "center",
+    width: "90%",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#B8A77A",
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    gap: 8,
+  },
+  completionTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#184D3B",
+  },
+  completionText: {
+    fontSize: 14,
+    color: "#92743C",
+    textAlign: "center",
   },
 });

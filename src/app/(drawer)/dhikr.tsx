@@ -1,14 +1,25 @@
-import { dhikr, type Dhikr } from "@/data/dhikr";
+import { useDhikr } from "@/context/DhikrContext";
+import type { Dhikr } from "@/data/dhikr";
 import { router } from "expo-router";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function DhikrPhrasesScreen() {
+  const { dhikrList } = useDhikr();
+
   return (
     <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
       <FlatList<Dhikr>
-        data={dhikr}
+        data={dhikrList}
         keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          <Pressable
+            style={styles.addButton}
+            onPress={() => router.push("/add")}
+          >
+            <Text style={styles.addButtonText}>+ Add New Dhikr</Text>
+          </Pressable>
+        }
         renderItem={({ item }) => (
           <Pressable
             style={styles.row}
@@ -20,7 +31,7 @@ export default function DhikrPhrasesScreen() {
             }
           >
             <Text style={styles.rowTitle}>{item.name}</Text>
-            <Text style={styles.count}>{item.count}</Text>
+            <Text style={styles.count}>{item.target} times</Text>
           </Pressable>
         )}
         ListFooterComponent={
@@ -47,6 +58,18 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     gap: 12,
+  },
+  addButton: {
+    backgroundColor: "#184D3B",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  addButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 16,
   },
   row: {
     flexDirection: "row",
