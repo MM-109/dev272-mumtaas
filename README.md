@@ -157,3 +157,406 @@ Put components, hooks, and utilities in `src/` next to `app/` (for example `src/
 | `.vscode/settings.json` | Turns off Copilot inline completions for this workspace. |
 
 If an AI tool starts writing code for you anyway, stop, and ask it to explain instead. That is the tool ignoring the rules, and the grade is still yours.
+
+# Adhkar
+
+DEV 272 | Mobile Application Development  
+Bellevue College | Fall 2026
+
+## About the App
+
+Adhkar is a mobile application designed to make the remembrance of Allah accessible and convenient.
+
+The app includes a digital dhikr counter, a searchable collection of dhikr phrases, supplications from Hisnul Muslim, and a daily dua.
+
+Users can select a dhikr phrase, count their repetitions, create new dhikr entries, and continue their progress after closing and reopening the app.
+
+## Technologies
+
+- React Native 0.86
+- Expo SDK 57
+- TypeScript
+- Expo Router
+- pnpm
+- Supabase
+- TanStack Query
+- AsyncStorage
+- React Hook Form
+- Zod
+
+## Features
+
+### Dhikr Counter
+
+The Home screen includes a digital tasbih counter. Users can select a dhikr phrase and tap the counter to increase their repetitions.
+
+The app displays a completion message when the selected target is reached.
+
+### Dhikr Library
+
+Dhikr phrases are retrieved from Supabase and displayed in a searchable library.
+
+Users can open individual phrases to view their meaning, reference, and suggested target.
+
+The library supports loading, error, empty, and pull-to-refresh states.
+
+### Add New Dhikr
+
+Users can create new dhikr entries using a validated form.
+
+Each entry includes:
+
+- Dhikr name
+- Meaning
+- Hadith or reference
+- Target count
+- Favorite selection
+
+New entries are saved to Supabase and become available in the dhikr library.
+
+### Persistent Progress
+
+AsyncStorage saves the selected dhikr phrase and repetition counts.
+
+Progress remains available after the application is closed and reopened.
+
+### Duas
+
+The Duas section includes supplications and instructions organized by chapters from Hisnul Muslim.
+
+The app displays Arabic text, transliteration, English translations, and references when available.
+
+### Dua of the Day
+
+The Home screen displays a daily supplication with Arabic text, pronunciation, translation, and reference.
+
+The card can be flipped to view additional information.
+
+## Week 5: Supabase Setup
+
+The application uses Supabase to store and retrieve dhikr entries.
+
+Follow these instructions to create the database.
+
+### 1. Create a Supabase Project
+
+1. Visit https://supabase.com
+2. Sign in or create an account.
+3. Create a new project.
+4. Wait for the database to finish initializing.
+5. Open the SQL Editor.
+
+### 2. Create the Dhikr Table
+
+Run the following SQL in the SQL Editor of a new project.
+
+```sql
+CREATE TABLE public.dhikr (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  meaning TEXT NOT NULL,
+  hadith TEXT NOT NULL,
+  target INTEGER NOT NULL DEFAULT 100,
+  "isFavorite" BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT dhikr_target_range
+    CHECK (target BETWEEN 1 AND 1000),
+
+  CONSTRAINT dhikr_name_not_empty
+    CHECK (length(trim(name)) > 0)
+);
+```
+
+The table includes a UUID primary key, creation timestamp, and constraints that prevent empty names and target counts outside the allowed range.
+
+### 3. Enable Row Level Security
+
+Run the following SQL after creating the table.
+
+```sql
+ALTER TABLE public.dhikr
+ENABLE ROW LEVEL SECURITY;
+
+GRANT SELECT ON TABLE public.dhikr TO anon;
+
+GRANT INSERT ON TABLE public.dhikr TO anon;
+
+CREATE POLICY "Allow public dhikr reading"
+ON public.dhikr
+FOR SELECT
+TO anon
+USING (true);
+
+CREATE POLICY "Allow public dhikr creation"
+ON public.dhikr
+FOR INSERT
+TO anon
+WITH CHECK (true);
+```
+
+These policies allow anonymous users to read existing dhikr entries and create new ones.
+
+The app does not require users to create an account.
+
+### 4. Insert the Initial Dhikr Data
+
+Run the following SQL to populate the table with eight initial dhikr phrases.
+
+```sql
+INSERT INTO public.dhikr
+  (name, meaning, hadith, target, "isFavorite")
+VALUES
+  (
+    'Subhanallah',
+    'Glory be to Allah',
+    'Whoever says ''Subhanallah wa bihamdihi'' 100 times a day, his sins will be forgiven even if they are like the foam of the sea.',
+    33,
+    TRUE
+  ),
+  (
+    'Alhamdulillah',
+    'Praise be to Allah',
+    'Alhamdulillah fills the scale, and Subhanallah and Alhamdulillah fill what is between the heavens and the earth.',
+    33,
+    TRUE
+  ),
+  (
+    'Allahu Akbar',
+    'Allah is the Greatest',
+    'The most beloved words to Allah are four: Subhanallah, Alhamdulillah, La ilaha illallah, and Allahu Akbar.',
+    34,
+    TRUE
+  ),
+  (
+    'Astaghfirullah',
+    'I seek forgiveness from Allah',
+    'If anyone constantly seeks forgiveness, Allah will appoint for him a way out of every distress and a relief from every anxiety.',
+    100,
+    FALSE
+  ),
+  (
+    'La ilaha illallah',
+    'There is no deity except Allah',
+    'The best remembrance is the remembrance of La ilaha illallah.',
+    100,
+    TRUE
+  ),
+  (
+    'Subhanallahi wa bihamdihi',
+    'Glory and praise be to Allah',
+    'Two phrases are light on the tongue, heavy on the scale, and beloved to the Most Merciful.',
+    100,
+    FALSE
+  ),
+  (
+    'La hawla wala quwwata illa billah',
+    'There is no power and no strength except with Allah',
+    'It is a treasure from the treasures of Paradise.',
+    100,
+    FALSE
+  ),
+  (
+    'Allahumma salli ''ala Muhammad',
+    'O Allah, send blessings upon Muhammad',
+    'Whoever sends blessings upon me once, Allah will send blessings upon him tenfold.',
+    100,
+    TRUE
+  );
+```
+
+### 5. Verify the Database
+
+Run this query to confirm the records were inserted successfully.
+
+```sql
+SELECT id, name, target, created_at
+FROM public.dhikr
+ORDER BY created_at;
+```
+
+The initial setup should return eight records. Additional records can be created through the app.
+
+## Environment Variables
+
+Create a `.env` file in the project root.
+
+Add the following variables:
+
+```env
+EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
+EXPO_PUBLIC_SUPABASE_KEY=your_supabase_publishable_key
+```
+
+To find these values:
+
+1. Open the Supabase project dashboard.
+2. Find the project URL and publishable API key in the project's API settings or Connect panel.
+3. Copy the values into the `.env` file.
+
+The `.env` file is excluded from Git using `.gitignore`.
+
+Do not commit environment variable values to GitHub.
+
+Use the Supabase publishable key.
+
+## Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/MM-109/dev272-mumtaas.git
+cd dev272-mumtaas
+```
+
+### 2. Install Dependencies
+
+Make sure Node.js LTS and pnpm are installed.
+
+```bash
+pnpm install
+```
+
+### 3. Configure Supabase
+
+Create the `.env` file using the environment variables described above.
+
+Make sure the Supabase table, security policies, and initial records have been created.
+
+### 4. Start the Application
+
+```bash
+pnpm start
+```
+
+Expo will display a QR code.
+
+Scan the code using Expo Go on a supported Android or iPhone device.
+
+The phone and computer should be connected to the same Wi-Fi network.
+
+### 5. Verify TypeScript
+
+```bash
+pnpm exec tsc --noEmit
+```
+
+A successful check finishes without reporting errors.
+
+## Week 5 Architecture
+
+### Supabase
+
+Supabase stores the shared dhikr library.
+
+The `public.dhikr` table contains the phrase name, meaning, hadith or reference, target, favorite status, and creation timestamp.
+
+### API Functions
+
+The `src/api/dhikr.ts` file contains the typed functions used to communicate with Supabase:
+
+- `fetchDhikr` retrieves all dhikr entries.
+- `fetchDhikrById` retrieves a single entry.
+- `createDhikr` inserts a new entry.
+
+Screens use these functions rather than accessing the Supabase database directly.
+
+### TanStack Query
+
+TanStack Query manages remote data fetching and caching.
+
+The root layout includes `QueryClientProvider`.
+
+The dhikr list uses `useQuery` to retrieve records and supports refreshing.
+
+The detail screen retrieves individual records using their IDs.
+
+The Add New Dhikr form uses `useMutation` to insert records and invalidates the cached list after a successful submission.
+
+### AsyncStorage
+
+AsyncStorage manages client-owned progress rather than the shared dhikr library.
+
+The `DhikrContext` provider saves and restores:
+
+- Selected dhikr phrase
+- Repetition counts for individual phrases
+
+The app retrieves previously saved progress when it starts and automatically saves changes as the user continues counting. 
+
+This allows users to resume their dhikr sessions after restarting the app.
+
+## Project Structure
+
+```text
+src/
+  api/
+    dhikr.ts
+
+  app/
+    (drawer)/
+      index.tsx
+      dhikr.tsx
+      duas.tsx
+
+    dhikr/
+      [id].tsx
+
+    dua/
+      category/
+        [id].tsx
+
+    _layout.tsx
+    add.tsx
+    search.tsx
+
+  context/
+    DhikrContext.tsx
+
+  data/
+    catalogue.json
+    dailyDua.ts
+    dhikr.ts
+    duas.ts
+
+  lib/
+    supabase.ts
+```
+
+## Testing
+
+The application has been tested on a physical mobile device using Expo Go.
+
+The following functionality has been checked:
+
+- Loading dhikr entries from Supabase
+- Opening individual dhikr details
+- Creating new dhikr entries
+- Displaying newly created entries from the database
+- Searching and selecting dhikr phrases
+- Incrementing the counter
+- Displaying the target completion message
+- Preserving selected phrases and counts after restarting the app
+- Navigating between screens
+- Viewing supplications by category
+
+TypeScript can be checked using:
+
+```bash
+pnpm exec tsc --noEmit
+```
+
+## References
+
+- Expo: https://docs.expo.dev/
+- React Native: https://reactnative.dev/
+- Supabase: https://supabase.com/docs
+- TanStack Query: https://tanstack.com/query/latest
+- React Native AsyncStorage: https://react-native-async-storage.github.io/async-storage/
+- Hisnul Muslim: https://myislam.org/hisnul-muslim/
+- OpenDua (Hisnul Muslim dataset): https://opendua.org/
+
+## Author
+
+Mumtaas  Mohamud
+DEV 272 | Bellevue College
