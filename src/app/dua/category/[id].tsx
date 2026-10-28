@@ -6,27 +6,18 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function DuaCategoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const category = duaCategories.find(
-    (item) => item.id === id
-  );
-
-  const categoryDuas = duas.filter(
-    (item) => item.categoryId === id
-  );
+  const category = duaCategories.find((item) => item.id === id);
+  const categoryDuas = duas.filter((item) => item.categoryId === id);
 
   function renderDua({ item }: { item: Dua }) {
     return (
       <View style={styles.duaCard}>
         <Text style={styles.duaTitle}>{item.title}</Text>
-
         <Text style={styles.arabic}>{item.arabic}</Text>
-
         <Text style={styles.transliteration}>
           {item.transliteration}
         </Text>
-
         <Text style={styles.meaning}>{item.meaning}</Text>
-
         <Text style={styles.reference}>
           Reference: {item.reference}
         </Text>
@@ -35,17 +26,12 @@ export default function DuaCategoryScreen() {
   }
 
   return (
-    <SafeAreaView
-      style={styles.container}
-      edges={["bottom"]}
-    >
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
       <Stack.Screen
         options={{
           title: category?.title ?? "Duas",
           headerBackButtonDisplayMode: "minimal",
-          headerStyle: {
-            backgroundColor: "#F8F5EC",
-          },
+          headerStyle: { backgroundColor: "#F8F5EC" },
           headerTintColor: "#184D3B",
           headerTitleStyle: {
             color: "#184D3B",
@@ -59,13 +45,20 @@ export default function DuaCategoryScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderDua}
         contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          category ? (
+            <Text style={styles.chapter}>
+              {category.description}
+            </Text>
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyTitle}>
-              No duas added yet
+              Supplications being added
             </Text>
             <Text style={styles.emptyText}>
-              Duas for this category will appear here.
+              This chapter is part of the selected collection.
             </Text>
           </View>
         }
@@ -86,6 +79,11 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     flexGrow: 1,
   },
+  chapter: {
+    fontSize: 15,
+    color: "#92743C",
+    marginBottom: 8,
+  },
   duaCard: {
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
@@ -103,6 +101,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     lineHeight: 44,
     textAlign: "right",
+    writingDirection: "rtl",
     color: "#184D3B",
   },
   transliteration: {

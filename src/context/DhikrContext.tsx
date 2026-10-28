@@ -1,38 +1,75 @@
-import { dhikr as initialDhikr, type Dhikr } from "@/data/dhikr";
-import type { DhikrData } from "@/utils/dhikrSchema";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
 } from "react";
 
 type DhikrContextType = {
-  dhikrList: Dhikr[];
   count: number;
   selectedDhikrId: string;
   incrementCount: () => void;
   selectDhikr: (id: string) => void;
-  addDhikr: (data: DhikrData) => void;
 };
 
 const DhikrContext = createContext<DhikrContextType | undefined>(
   undefined
 );
 
+const STORAGE_KEY = "adhkar-progress";
+
 export function DhikrProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const [dhikrList, setDhikrList] = useState<Dhikr[]>(initialDhikr);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [selectedDhikrId, setSelectedDhikrId] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    async function loadProgress() {
+      try {
+        const saved = await AsyncStorage.getItem(STORAGE_KEY);
+
+        if (saved) {
+          const progress = JSON.parse(saved);
+          setCounts(progress.counts ?? {});
+          setSelectedDhikrId(progress.selectedDhikrId ?? "");
+        }
+      } catch (error) {
+        console.error("Unable to load dhikr progress:", error);
+      } finally {
+        setHydrated(true);
+      }
+    }
+
+    loadProgress();
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+
+    async function saveProgress() {
+      try {
+        await AsyncStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({ counts, selectedDhikrId })
+        );
+      } catch (error) {
+        console.error("Unable to save dhikr progress:", error);
+      }
+    }
+
+    saveProgress();
+  }, [counts, selectedDhikrId, hydrated]);
 
   const count = counts[selectedDhikrId] ?? 0;
 
   function incrementCount() {
-    if (!selectedDhikrId) return;
+    if (!selectedDhikrId || !hydrated) return;
 
     setCounts((previousCounts) => ({
       ...previousCounts,
@@ -42,31 +79,17 @@ export function DhikrProvider({
   }
 
   function selectDhikr(id: string) {
+    if (!hydrated) return;
     setSelectedDhikrId(id);
-  }
-
-  function addDhikr(data: DhikrData) {
-    const newItem: Dhikr = {
-      id: Date.now().toString(),
-      name: data.name,
-      meaning: data.meaning,
-      hadith: data.hadith,
-      target: data.target,
-      isFavorite: data.isFavorite,
-    };
-
-    setDhikrList((previousList) => [newItem, ...previousList]);
   }
 
   return (
     <DhikrContext.Provider
       value={{
-        dhikrList,
         count,
         selectedDhikrId,
         incrementCount,
         selectDhikr,
-        addDhikr,
       }}
     >
       {children}

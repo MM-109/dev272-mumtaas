@@ -1,17 +1,50 @@
-import { useDhikr } from "@/context/DhikrContext";
+import { fetchDhikr } from "@/api/dhikr";
 import type { Dhikr } from "@/data/dhikr";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function DhikrPhrasesScreen() {
-  const { dhikrList } = useDhikr();
+  const {
+    data: dhikrList = [],
+    isPending,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+  } = useQuery({
+    queryKey: ["dhikr"],
+    queryFn: fetchDhikr,
+  });
+
+  if (isPending) {
+    return (
+      <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
+        <Text style={styles.message}>Loading dhikr...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (isError) {
+    return (
+      <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
+        <Text style={styles.message}>Unable to load dhikr.</Text>
+        <Text style={styles.message}>{error.message}</Text>
+        <Pressable style={styles.button} onPress={() => refetch()}>
+          <Text style={styles.buttonText}>Try Again</Text>
+        </Pressable>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
       <FlatList<Dhikr>
         data={dhikrList}
         keyExtractor={(item) => item.id}
+        refreshing={isRefetching}
+        onRefresh={() => refetch()}
         ListHeaderComponent={
           <Pressable
             style={styles.addButton}
@@ -19,6 +52,9 @@ export default function DhikrPhrasesScreen() {
           >
             <Text style={styles.addButtonText}>+ Add New Dhikr</Text>
           </Pressable>
+        }
+        ListEmptyComponent={
+          <Text style={styles.message}>No dhikr phrases found.</Text>
         }
         renderItem={({ item }) => (
           <Pressable
@@ -103,5 +139,10 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#FFFFFF",
     fontWeight: "600",
+  },
+  message: {
+    color: "#184D3B",
+    textAlign: "center",
+    padding: 20,
   },
 });

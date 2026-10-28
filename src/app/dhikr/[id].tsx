@@ -1,12 +1,44 @@
-import { useDhikr } from "@/context/DhikrContext";
+import { fetchDhikrById } from "@/api/dhikr";
+import { useQuery } from "@tanstack/react-query";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function DhikrDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { dhikrList } = useDhikr();
 
-  const selectedDhikr = dhikrList.find((item) => item.id === id);
+  const {
+    data: selectedDhikr,
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["dhikr", id],
+    queryFn: () => fetchDhikrById(id),
+    enabled: !!id,
+  });
+
+  if (isPending) {
+    return (
+      <View style={styles.container}>
+        <Stack.Screen options={{ title: "Loading Dhikr" }} />
+        <Text style={styles.title}>Loading dhikr...</Text>
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.container}>
+        <Stack.Screen options={{ title: "Dhikr Not Found" }} />
+        <Text style={styles.title}>Unable to load dhikr</Text>
+        <Text style={styles.subtitle}>{error.message}</Text>
+        <Text style={styles.count} onPress={() => refetch()}>
+          Try Again
+        </Text>
+      </View>
+    );
+  }
 
   if (!selectedDhikr) {
     return (
@@ -99,3 +131,4 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
+

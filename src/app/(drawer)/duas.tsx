@@ -42,14 +42,16 @@ export default function DuasScreen() {
         renderItem={renderCategory}
         contentContainerStyle={styles.list}
         ListFooterComponent={
-          <Pressable
-            style={styles.homeButton}
-            onPress={() => router.navigate("/")}
-          >
-            <Text style={styles.homeButtonText}>
-              Go to Home
-            </Text>
-          </Pressable>
+          <View style={styles.footer}>
+            <Pressable
+              style={styles.homeButton}
+              onPress={() => router.navigate("/")}
+            >
+              <Text style={styles.homeButtonText}>
+                Go to Home
+              </Text>
+            </Pressable>
+          </View>
         }
       />
     </SafeAreaView>
@@ -105,13 +107,17 @@ const styles = StyleSheet.create({
     color: "#184D3B",
     marginLeft: 12,
   },
+  footer: {
+    gap: 12,
+    marginTop: 12,
+  },
   homeButton: {
     backgroundColor: "#184D3B",
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 10,
     alignSelf: "center",
-    marginTop: 20,
+    marginTop: 8,
   },
   homeButtonText: {
     color: "#FFFFFF",

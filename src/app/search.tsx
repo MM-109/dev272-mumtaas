@@ -1,12 +1,25 @@
+import { fetchDhikr } from "@/api/dhikr";
 import { useDhikr } from "@/context/DhikrContext";
 import type { Dhikr } from "@/data/dhikr";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 export default function SearchScreen() {
   const [query, setQuery] = useState("");
-  const { dhikrList, selectDhikr } = useDhikr();
+  const { selectDhikr } = useDhikr();
+
+  const {
+    data: dhikrList = [],
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["dhikr"],
+    queryFn: fetchDhikr,
+  });
 
   const filteredDhikr = dhikrList.filter((item) =>
     item.name.toLowerCase().includes(query.toLowerCase())
@@ -29,6 +42,22 @@ export default function SearchScreen() {
       )}
       ListHeaderComponent={
         <Header query={query} setQuery={setQuery} />
+      }
+      ListEmptyComponent={
+        isPending ? (
+          <Text style={styles.message}>Loading dhikr...</Text>
+        ) : isError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.message}>
+              Unable to load dhikr: {error.message}
+            </Text>
+            <Pressable style={styles.button} onPress={() => refetch()}>
+              <Text style={styles.buttonText}>Try Again</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Text style={styles.message}>No dhikr phrases found.</Text>
+        )
       }
       contentContainerStyle={styles.container}
       style={styles.screen}
@@ -155,4 +184,14 @@ const styles = StyleSheet.create({
   count: {
     color: "#92743C",
   },
+  message: {
+    color: "#184D3B",
+    textAlign: "center",
+    padding: 20,
+  },
+  errorContainer: {
+    alignItems: "center",
+    gap: 12,
+  },
 });
+

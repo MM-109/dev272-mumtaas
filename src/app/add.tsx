@@ -1,13 +1,14 @@
-import { useDhikr } from "@/context/DhikrContext";
+import { createDhikr } from "@/api/dhikr";
 import { dhikrSchema, type DhikrData, type DhikrFormValues } from "@/utils/dhikrSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
 export default function AddDhikrScreen() {
   const router = useRouter();
-  const { addDhikr } = useDhikr();
+  const queryClient = useQueryClient();
 
   const {
     control,
@@ -25,9 +26,18 @@ export default function AddDhikrScreen() {
     mode: "onTouched",
   });
 
-  const onSubmit = (data: DhikrData) => {
-    addDhikr(data);
-    router.back();
+  const mutation = useMutation({
+    mutationFn: createDhikr,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["dhikr"] });
+      router.back();
+    },
+  });
+
+  const onSubmit = async (data: DhikrData) => {
+    try {
+      await mutation.mutateAsync(data);
+    } catch {}
   };
 
   return (
@@ -169,16 +179,22 @@ export default function AddDhikrScreen() {
           />
         </View>
 
+        {mutation.isError && (
+          <Text style={styles.errorText} accessibilityRole="alert">
+            Unable to save dhikr: {mutation.error.message}
+          </Text>
+        )}
+
         <Pressable
           style={[
             styles.submitButton,
-            isSubmitting && styles.buttonDisabled,
+            (isSubmitting || mutation.isPending) && styles.buttonDisabled,
           ]}
           onPress={handleSubmit(onSubmit)}
-          disabled={isSubmitting}
+          disabled={isSubmitting || mutation.isPending}
         >
           <Text style={styles.submitButtonText}>
-            {isSubmitting ? "Saving..." : "Save Dhikr"}
+            {isSubmitting || mutation.isPending ? "Saving..." : "Save Dhikr"}
           </Text>
         </Pressable>
       </ScrollView>
